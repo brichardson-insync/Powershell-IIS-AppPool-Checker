@@ -1,0 +1,47 @@
+############################################################################
+#                         App Pool Checking tool                           #
+#                      Created by Ben Richardson                           #
+#                            Version 1.0.0                                 #
+#                             20/03/2020                                   #
+############################################################################
+
+##Pre-requisites##
+
+##Check for WebAdministration Module
+if (Get-Module -ListAvailable -Name WebAdministration) 
+	{
+		Write-Host "Module exists.....importing now"
+		Import-Module WebAdministration
+	} 
+else 
+	{
+      Write-Host "Module missing.... Installing now"
+      Import-Module WebAdministration
+	}
+
+##Variables##
+$Server= $env:COMPUTERNAME
+$AppPool = "APP-POOL-HERE"
+$AppPoolState = Get-WebAppPoolState -Name $AppPool
+$MailRecipients = "user1@domain.com","user2@domain.com"
+$AdminMailRecipients = "adminemail@somedomain.com"
+$MailServer = "mail.somedomain.com"
+$MailSender = "$env:computername@domain.com"
+$MailSubject = "[$env:computername] $AppPool is in state: $($AppPoolState.Value)"
+$MailBody = "App Pool $AppPool has entered State $($AppPoolState.Value) on server $Server - This script will attempt an auto-restart if stopped"
+$MailPriority = "High"
+$MailAdminBody = "Check of script running"
+
+
+if ($AppPoolState.Value -eq "Stopped") 
+	{
+		Send-MailMessage -From $MailSender -To $MailRecipients -Subject $MailSubject -Body $MailBody -Priority $MailPriority -smtpserver $MailServer
+		Start-WebAppPool -Name $AppPool
+		Write-Host "$AppPool AppPool started on $Server"
+    }
+        else 
+		{
+			Write-Host "$AppPool AppPool already running on $Server"
+			#Send-MailMessage -From $MailSender -To $AdminMailRecipients -Subject $MailSubject -Body $MailAdminBody -Priority $MailPriority -smtpserver $MailServer
+        }
+		
